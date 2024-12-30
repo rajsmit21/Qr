@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fancy QR Code Generator</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.4.4/qrcode.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      text-align: center;
+    }
+    input, button {
+      margin: 10px;
+      padding: 10px;
+      font-size: 16px;
+    }
+    img {
+      margin: 10px;
+      max-width: 90%;
+    }
+  </style>
+</head>
+<body>
+  <h1>Fancy QR Code Generator</h1>
+  <div>
+    <input type="text" id="link-input" placeholder="Enter Link" style="width: 300px;">
+    <br>
+    <input type="text" id="prompt-input" placeholder="Enter Image Prompt" style="width: 300px;">
+    <br>
+    <button onclick="generateFancyQRCode()">Generate Fancy QR Code</button>
+  </div>
+
+  <div id="generated-img"></div>
+  <div id="qr-code"></div>
+
+  <script>
+    async function generateFancyQRCode() {
+      const link = document.getElementById('link-input').value.trim();
+      const prompt = document.getElementById('prompt-input').value.trim();
+
+      if (!link || !prompt) {
+        alert('Please provide both a link and an image prompt.');
+        return;
+      }
+
+      // Fetch the image from the public API
+      let generatedImageURL = '';
+      try {
+        const response = await fetch(`https://bj-tricks.serv00.net/Ai-image_gen.php?prompt=${encodeURIComponent(prompt)}`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch the generated image.');
+        }
+        const blob = await response.blob();
+        generatedImageURL = URL.createObjectURL(blob);
+      } catch (error) {
+        alert(error.message);
+        return;
+      }
+
+      // Display the generated image
+      const generatedImg = document.createElement('img');
+      generatedImg.src = generatedImageURL;
+      generatedImg.alt = 'Generated Background';
+      generatedImg.style.width = '512px';
+      generatedImg.style.height = '512px';
+      document.getElementById('generated-img').innerHTML = '';
+      document.getElementById('generated-img').appendChild(generatedImg);
+
+      // Generate QR code
+      const qrCanvas = document.createElement('canvas');
+      QRCode.toCanvas(qrCanvas, link, { width: 256 });
+
+      // Combine QR code and generated image
+      const combinedCanvas = document.createElement('canvas');
+      combinedCanvas.width = 512;
+      combinedCanvas.height = 512;
+      const ctx = combinedCanvas.getContext('2d');
+
+      const qrImage = new Image();
+      qrImage.src = qrCanvas.toDataURL();
+
+      qrImage.onload = () => {
+        ctx.drawImage(generatedImg, 0, 0, 512, 512); // Background image
+        ctx.drawImage(qrImage, 128, 128, 256, 256); // QR code overlay
+        const finalImage = combinedCanvas.toDataURL();
+
+        const imgElement = document.createElement('img');
+        imgElement.src = finalImage;
+        imgElement.alt = 'Fancy QR Code';
+        document.getElementById('qr-code').innerHTML = '';
+        document.getElementById('qr-code').appendChild(imgElement);
+      };
+    }
+  </script>
+</body>
+</html>
